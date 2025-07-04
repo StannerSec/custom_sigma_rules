@@ -1,0 +1,30 @@
+title: WMIC Query for Antivirus Information
+id: a9386d2b-4f6f-4b21-ae1e-0218c5a45c3c
+description: Detects PowerShell execution with the ExecutionPolicy Bypass flag used to run a WMIC query for AntivirusProduct in SecurityCenter2 namespace
+status: experimental
+author: Sam Tanner
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    CommandLine|contains:
+      - 'powershell.exe'
+      - '-ExecutionPolicy Bypass'
+      - 'wmic /NAMESPACE:\\\\root\\SecurityCenter2 PATH AntiVirusProduct GET /value'
+  condition: selection
+fields:
+  - CommandLine
+  - Image
+  - User
+  - ParentImage
+falsepositives:
+  - System administrator activity
+  - Software inventory tasks
+level: medium
+tags:
+  - attack.execution
+  - attack.t1086
+  - attack.discovery
+  - attack.t1518.001
+

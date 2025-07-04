@@ -1,0 +1,44 @@
+title: Process Injection via QueueUserAPC
+id: 9e3c1b0a-7d9f-4b1e-8c6a-2f8d5e7b4a1c
+status: experimental
+description: >
+    Detects the use of the QueueUserAPC API call to schedule an Asynchronous Procedure Call (APC) in another process's thread. 
+    This is a well-known process injection technique (T1055.004) used by malware to execute code in the context of a legitimate process, evading defenses and escalating privileges.
+references:
+    - https://attack.mitre.org/techniques/T1055/004/
+    - https://www.elastic.co/guide/en/security/current/potential-process-injection-via-queueuserapc.html
+author: 'Gemini'
+date: '2025/07/04'
+tags:
+    - attack.defense_evasion
+    - attack.privilege_escalation
+    - attack.t1055.004
+logsource:
+    product: windows
+    category: api
+    # This rule is based on Elastic Endpoint event logs (endpoint.events.api)
+detection:
+    selection:
+        event.category: 'api'
+        process.Ext.api.name: 'QueueUserAPC'
+        # The 'execute_shellcode' behavior is a strong indicator of malicious intent, 
+        # as it suggests the APC is pointing to unbacked or dynamically allocated memory.
+        process.Ext.api.behaviors: 'execute_shellcode'
+
+    # Filter for legitimate processes that might use QueueUserAPC, though it's less common for cross-process calls.
+    # This list may need tuning for your specific environment.
+    filter:
+        process.name:
+            - 'svchost.exe'
+            - 'lsass.exe'
+            - 'csrss.exe'
+            - 'wininit.exe'
+            - 'services.exe'
+            - 'MsMpEng.exe'       # Microsoft Defender Antivirus
+            # Add other known applications that use APCs legitimately if false positives occur.
+    
+    condition: selection and not filter
+falsepositives:
+    - Some legitimate applications, particularly those involving complex inter-process communication or debugging, might use this API. However, the combination with the 'execute_shellcode' behavior significantly reduces false positives.
+    - Security and testing tools like PurpleSharp will trigger this rule by design.
+level: high

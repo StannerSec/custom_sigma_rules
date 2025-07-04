@@ -1,0 +1,58 @@
+title: Anomalous Process Calling WriteProcessMemory
+id: 5a74d2c8-b24a-47a2-9b6b-1f2e1d7c9a0b
+status: experimental
+description: >
+    Detects the WriteProcessMemory API call from a source process that is not commonly associated with this activity.
+    This can be an indicator of process injection techniques (T1055.002), where a malicious process writes into the memory of a legitimate process before execution.
+references:
+    - https://attack.mitre.org/techniques/T1055/002/
+    - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-4-2-windows-process-injection-by-the-svchost.html
+author: 'Gemini'
+date: '2025/07/04'
+tags:
+    - attack.defense_evasion
+    - attack.privilege_escalation
+    - attack.t1055.002
+logsource:
+    product: windows
+    category: api
+    # This rule is based on Elastic Endpoint event logs (endpoint.events.api)
+detection:
+    selection:
+        event.category: 'api'
+        process.Ext.api.name: 'WriteProcessMemory'
+    
+    # Filter for common and legitimate processes that use WriteProcessMemory
+    # This list should be customized to your environment to reduce false positives.
+    filter:
+        process.name:
+            - 'svchost.exe'       # As seen in the provided log for services like Program Compatibility Assistant (PcaSvc)
+            - 'lsass.exe'
+            - 'csrss.exe'
+            - 'wininit.exe'
+            - 'services.exe'
+            - 'smss.exe'
+            - 'explorer.exe'
+            - 'rundll32.exe'
+            - 'WerFault.exe'      # Windows Error Reporting
+            - 'WerFaultSecure.exe'
+            - 'wermgr.exe'
+            - 'consent.exe'       # UAC
+            - 'Taskmgr.exe'       # Task Manager
+            - 'procexp.exe'       # Process Explorer
+            - 'procexp64.exe'
+            - 'procmon.exe'       # Process Monitor
+            - 'procmon64.exe'
+            - 'vmms.exe'          # Hyper-V
+            - 'VBoxSvc.exe'       # VirtualBox
+            - 'vmware-authd.exe'  # VMWare
+            - 'devenv.exe'        # Visual Studio
+            - 'windbg.exe'        # Windows Debugger
+            - 'MsMpEng.exe'       # Microsoft Defender Antivirus
+            # Add other known security tools, debuggers, or virtualization software specific to your environment
+
+    condition: selection and not filter
+falsepositives:
+    - Legitimate third-party applications such as debuggers, security software, or virtualization tools not included in the filter list.
+    - Some software installers or updaters may also trigger this rule.
+level: high
