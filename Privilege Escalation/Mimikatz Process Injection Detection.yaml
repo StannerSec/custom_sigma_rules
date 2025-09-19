@@ -1,0 +1,76 @@
+title: Mimikatz Process Injection Detection
+id: a8c4d7e2-9f1b-4c3e-8d5a-1b7f6e9c2a4d
+status: experimental
+description: >
+    Detects process injection techniques commonly used by Mimikatz to inject code into legitimate processes for credential extraction.
+    This rule identifies suspicious API calls and memory operations typically associated with Mimikatz process injection methods.
+references:
+    - https://attack.mitre.org/techniques/T1055/
+    - https://attack.mitre.org/software/S0002/
+    - https://github.com/gentilkiwi/mimikatz
+author: 'Claude Code Assistant'
+date: '2025/09/14'
+tags:
+    - attack.defense_evasion
+    - attack.privilege_escalation
+    - attack.credential_access
+    - attack.t1055
+    - attack.t1003.001
+logsource:
+    product: windows
+    category: process_access
+detection:
+    selection_injection:
+        event.category: 'process_access'
+        Api:
+            - 'OpenProcess'
+            - 'VirtualAllocEx'
+            - 'WriteProcessMemory'
+            - 'CreateRemoteThread'
+            - 'SetThreadContext'
+            - 'ResumeThread'
+
+    selection_target:
+        TargetImage|endswith:
+            - 'lsass.exe'
+            - 'winlogon.exe'
+            - 'csrss.exe'
+            - 'explorer.exe'
+            - 'svchost.exe'
+
+    selection_mimikatz_indicators:
+        ProcessCommandLine|contains:
+            - 'sekurlsa'
+            - 'privilege::debug'
+            - 'token::elevate'
+            - 'crypto::capi'
+            - 'lsadump'
+
+    selection_suspicious_memory:
+        event.category: 'api'
+        process.Ext.api.name:
+            - 'VirtualAllocEx'
+            - 'WriteProcessMemory'
+        process.Ext.api.behaviors:
+            - 'execute_shellcode'
+            - 'allocate_shellcode'
+
+    # Filter legitimate system processes
+    filter:
+        ProcessName|endswith:
+            - 'MsMpEng.exe'         # Microsoft Defender
+            - 'svchost.exe'
+            - 'services.exe'
+            - 'wininit.exe'
+            - 'csrss.exe'
+        ParentProcessName|endswith:
+            - 'services.exe'
+            - 'wininit.exe'
+
+    condition: (selection_injection and selection_target) or selection_mimikatz_indicators or selection_suspicious_memory and not filter
+falsepositives:
+    - Legitimate security tools and penetration testing frameworks
+    - System administration tools that require process memory access
+    - Debugging and development tools
+    - Some antivirus products performing memory scanning
+level: high
