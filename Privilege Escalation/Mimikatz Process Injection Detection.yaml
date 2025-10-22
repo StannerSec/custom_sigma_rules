@@ -2,14 +2,17 @@ title: Mimikatz Process Injection Detection
 id: a8c4d7e2-9f1b-4c3e-8d5a-1b7f6e9c2a4d
 status: experimental
 description: >
+    HYBRID RULE - Contains both standard Sigma detections and Elastic-specific detections.
+    Some detection sections use ECS fields and will only work with Elastic Security.
+
     Detects process injection techniques commonly used by Mimikatz to inject code into legitimate processes for credential extraction.
     This rule identifies suspicious API calls and memory operations typically associated with Mimikatz process injection methods.
 references:
     - https://attack.mitre.org/techniques/T1055/
     - https://attack.mitre.org/software/S0002/
     - https://github.com/gentilkiwi/mimikatz
-author: 'Claude Code Assistant'
-date: '2025/09/14'
+author: 'Sam Tanner'
+date: 2025-09-14
 tags:
     - attack.defense_evasion
     - attack.privilege_escalation
@@ -39,7 +42,7 @@ detection:
             - 'svchost.exe'
 
     selection_mimikatz_indicators:
-        ProcessCommandLine|contains:
+        CommandLine|contains:
             - 'sekurlsa'
             - 'privilege::debug'
             - 'token::elevate'
@@ -57,17 +60,17 @@ detection:
 
     # Filter legitimate system processes
     filter:
-        ProcessName|endswith:
-            - 'MsMpEng.exe'         # Microsoft Defender
-            - 'svchost.exe'
-            - 'services.exe'
-            - 'wininit.exe'
-            - 'csrss.exe'
-        ParentProcessName|endswith:
-            - 'services.exe'
-            - 'wininit.exe'
+        SourceImage|endswith:
+            - '\MsMpEng.exe'         # Microsoft Defender
+            - '\svchost.exe'
+            - '\services.exe'
+            - '\wininit.exe'
+            - '\csrss.exe'
+        ParentImage|endswith:
+            - '\services.exe'
+            - '\wininit.exe'
 
-    condition: (selection_injection and selection_target) or selection_mimikatz_indicators or selection_suspicious_memory and not filter
+    condition: ((selection_injection and selection_target) or selection_mimikatz_indicators or selection_suspicious_memory) and not filter
 falsepositives:
     - Legitimate security tools and penetration testing frameworks
     - System administration tools that require process memory access

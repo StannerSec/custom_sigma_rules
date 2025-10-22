@@ -2,13 +2,16 @@ title: Process Injection via QueueUserAPC
 id: 9e3c1b0a-7d9f-4b1e-8c6a-2f8d5e7b4a1c
 status: experimental
 description: >
-    Detects the use of the QueueUserAPC API call to schedule an Asynchronous Procedure Call (APC) in another process's thread. 
+    ELASTIC SECURITY SPECIFIC RULE - Uses ECS fields and Elastic Endpoint event logs.
+    This rule is not compatible with standard Sigma converters.
+
+    Detects the use of the QueueUserAPC API call to schedule an Asynchronous Procedure Call (APC) in another process's thread.
     This is a well-known process injection technique (T1055.004) used by malware to execute code in the context of a legitimate process, evading defenses and escalating privileges.
 references:
     - https://attack.mitre.org/techniques/T1055/004/
     - https://www.elastic.co/guide/en/security/current/potential-process-injection-via-queueuserapc.html
-author: 'Gemini'
-date: '2025/07/04'
+author: 'Sam Tanner'
+date: 2025-07-04
 tags:
     - attack.defense_evasion
     - attack.privilege_escalation

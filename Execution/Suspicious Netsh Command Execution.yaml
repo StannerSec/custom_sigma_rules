@@ -1,20 +1,53 @@
 title: Suspicious Netsh Command Execution
 id: 1a2b3c4d-5e6f-11ec-bf63-0242ac130002
-description: Detects suspicious execution of netsh commands that may indicate network configuration changes or enumeration.
+description: Detects suspicious execution of netsh commands that may indicate firewall manipulation, port forwarding, helper DLL injection, or network reconnaissance activities.
 status: experimental
 author: Samuel Tanner
+date: 2025-10-22
 logsource:
   category: process_creation
   product: windows
 detection:
-  selection:
-    Image: 'C:\\Windows\\System32\\netsh.exe'
-    CommandLine|contains: 'interface show interface'
-  condition: selection
+  selection_image:
+    Image|endswith: '\netsh.exe'
+
+  selection_firewall:
+    CommandLine|contains:
+      - 'firewall add'
+      - 'firewall set'
+      - 'firewall delete'
+      - 'advfirewall firewall add'
+      - 'advfirewall firewall set'
+      - 'advfirewall set allprofiles state off'
+
+  selection_portproxy:
+    CommandLine|contains:
+      - 'interface portproxy add'
+      - 'interface portproxy set'
+      - 'portproxy add v4tov4'
+      - 'portproxy add v4tov6'
+
+  selection_helper:
+    CommandLine|contains:
+      - 'add helper'
+      - 'add helper'
+
+  selection_trace:
+    CommandLine|contains:
+      - 'trace start'
+      - 'trace stop'
+
+  condition: selection_image and (selection_firewall or selection_portproxy or selection_helper or selection_trace)
 falsepositives:
-  - Legitimate network configuration tasks
+  - Legitimate network configuration tasks by system administrators
+  - Automated system management scripts
+  - Software installers modifying firewall rules
 level: high
 tags:
-  - attack.execution
-  - attack.t1219
+  - attack.defense_evasion
+  - attack.t1562.004
+  - attack.command_and_control
+  - attack.t1090.001
+  - attack.discovery
+  - attack.t1016
 
