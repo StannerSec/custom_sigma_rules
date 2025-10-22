@@ -2,13 +2,16 @@ title: Anomalous Process Calling WriteProcessMemory
 id: 5a74d2c8-b24a-47a2-9b6b-1f2e1d7c9a0b
 status: experimental
 description: >
+    ELASTIC SECURITY SPECIFIC RULE - Uses ECS fields and Elastic Endpoint event logs.
+    This rule is not compatible with standard Sigma converters.
+
     Detects the WriteProcessMemory API call from a source process that is not commonly associated with this activity.
     This can be an indicator of process injection techniques (T1055.002), where a malicious process writes into the memory of a legitimate process before execution.
 references:
     - https://attack.mitre.org/techniques/T1055/002/
     - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-4-2-windows-process-injection-by-the-svchost.html
-author: 'Gemini'
-date: '2025/07/04'
+author: 'Sam Tanner'
+date: 2025-07-04
 tags:
     - attack.defense_evasion
     - attack.privilege_escalation

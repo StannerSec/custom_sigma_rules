@@ -1,18 +1,28 @@
 title: WMIC Query for Antivirus Information
 id: a9386d2b-4f6f-4b21-ae1e-0218c5a45c3c
-description: Detects PowerShell execution with the ExecutionPolicy Bypass flag used to run a WMIC query for AntivirusProduct in SecurityCenter2 namespace
+description: Detects WMIC queries targeting the SecurityCenter2 namespace to enumerate installed antivirus products, a common reconnaissance technique used by adversaries to identify security controls.
 status: experimental
 author: Sam Tanner
+date: 2025-10-22
 logsource:
   category: process_creation
   product: windows
 detection:
-  selection:
-    CommandLine|contains:
-      - 'powershell.exe'
-      - '-ExecutionPolicy Bypass'
-      - 'wmic /NAMESPACE:\\\\root\\SecurityCenter2 PATH AntiVirusProduct GET /value'
-  condition: selection
+  selection_wmic:
+    Image|endswith: '\wmic.exe'
+    CommandLine|contains|all:
+      - 'SecurityCenter2'
+      - 'AntiVirusProduct'
+
+  selection_powershell:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'SecurityCenter2'
+      - 'AntiVirusProduct'
+
+  condition: selection_wmic or selection_powershell
 fields:
   - CommandLine
   - Image
@@ -20,11 +30,12 @@ fields:
   - ParentImage
 falsepositives:
   - System administrator activity
-  - Software inventory tasks
+  - Software inventory and asset management tools
+  - Security compliance scanning tools
 level: medium
 tags:
   - attack.execution
-  - attack.t1086
+  - attack.t1059.001
   - attack.discovery
   - attack.t1518.001
 
